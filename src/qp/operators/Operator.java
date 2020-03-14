@@ -42,6 +42,12 @@ public class Operator {
         System.exit(1);
         return null;
     }
+    
+    public Batch nextBlock(int size) {
+        System.err.println("Abstract interface cannot be used.");
+        System.exit(1);
+        return null;
+    }
 
     public boolean close() {
         return true;

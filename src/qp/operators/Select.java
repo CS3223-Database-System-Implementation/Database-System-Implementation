@@ -113,6 +113,18 @@ public class Select extends Operator {
         }
         return outbatch;
     }
+    
+    /**
+     * returns a block of tuples that satisfies the
+     * * condition specified on the tuples coming from base operator
+     **/
+    public Batch nextBlock(int size) {
+    	int temp = batchsize;
+    	batchsize = size;
+    	Batch out = next();
+    	batchsize = temp;
+    	return out;
+    }
 
     /**
      * closes the output connection

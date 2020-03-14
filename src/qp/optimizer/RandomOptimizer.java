@@ -56,6 +56,13 @@ public class RandomOptimizer {
                     nj.setNumBuff(numbuff);
                     return nj;
                     
+                case JoinType.BLOCKNESTED:
+                    BlockNestedJoin bnj = new BlockNestedJoin((Join) node);
+                    nj.setLeft(left);
+                    nj.setRight(right);
+                    nj.setNumBuff(numbuff);
+                    return bnj;
+                    
     		    case JoinType.SORTMERGE:
 
     				SortMerge sm = new SortMerge((Join) node);
