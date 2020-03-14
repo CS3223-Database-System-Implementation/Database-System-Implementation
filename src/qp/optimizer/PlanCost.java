@@ -150,7 +150,10 @@ public class PlanCost {
         	    break;
         	    
             case JoinType.SORTMERGE:
-            	joincost =  (2*leftpages*2) + (2*rightpages*2) + (leftpages + rightpages);
+            	long sortLeft = sortCost(leftpages, numbuff);
+            	long sortRight = sortCost(rightpages, numbuff);
+            	long mergeCost = leftpages + rightpages;
+            	joincost = sortLeft + sortRight + mergeCost; 
             	break;
             default:
                 System.out.println("join type is not supported");
@@ -160,6 +163,14 @@ public class PlanCost {
 
         return outtuples;
     }
+
+	private long sortCost(long pages, long numbuff) {
+		long sortedRunsNum = (long) Math.ceil(pages/numbuff);
+		long mergeSortedRunsNum = (long) Math.ceil(Math.log(sortedRunsNum)/Math.log(numbuff - 1));
+		long totalPasses = 1 + mergeSortedRunsNum;
+		long costToSortPages = 2 * pages * totalPasses;
+		return costToSortPages;
+	}
 
 	/**
      * Find number of incoming tuples, Using the selectivity find # of output tuples
