@@ -164,6 +164,9 @@ public class PlanCost {
         return outtuples;
     }
 
+	/**
+     * Find the cost to sort the table
+     **/
 	private long sortCost(long pages, long numbuff) {
 		long sortedRunsNum = (long) Math.ceil(pages/numbuff);
 		long mergeSortedRunsNum = (long) Math.ceil(Math.log(sortedRunsNum)/Math.log(numbuff - 1));
