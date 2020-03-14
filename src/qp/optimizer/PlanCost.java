@@ -143,6 +143,15 @@ public class PlanCost {
             case JoinType.NESTEDJOIN:
                 joincost = leftpages * rightpages;
                 break;
+                
+        	case JoinType.BLOCKNESTED:
+        		// fake need edit later
+        	    joincost = leftpages+(int)Math.ceil(leftpages/Batch.getPageSize())*rightpages + 20000;
+        	    break;
+        	    
+            case JoinType.SORTMERGE:
+            	joincost =  (2*leftpages*2) + (2*rightpages*2) + (leftpages + rightpages);
+            	break;
             default:
                 System.out.println("join type is not supported");
                 return 0;
@@ -152,7 +161,7 @@ public class PlanCost {
         return outtuples;
     }
 
-    /**
+	/**
      * Find number of incoming tuples, Using the selectivity find # of output tuples
      * * And statistics about the attributes
      * * Selection is performed on the fly, so no cost involved
