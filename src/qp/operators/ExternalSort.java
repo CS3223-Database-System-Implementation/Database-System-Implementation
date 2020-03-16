@@ -47,6 +47,7 @@ public class ExternalSort extends Operator {
     	 this.numBuffers = numBuffers;
      }
 
+     @Override
      public boolean open() {
     	 if (!source.open()) {
     		 return false;
@@ -72,6 +73,7 @@ public class ExternalSort extends Operator {
     	 return finalSortedFileReader.peek();
      } 
 	
+     @Override
      public boolean close() {
     	 finalSortedFile.delete();
     	 finalSortedFileReader.close();

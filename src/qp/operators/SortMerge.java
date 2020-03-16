@@ -16,19 +16,19 @@ import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 
- public class SortMerge extends Join {
-    private ExternalSort leftSort;
-    private ExternalSort rightSort;
+public class SortMerge extends Join {
+	private ExternalSort leftSort;
+	private ExternalSort rightSort;
 
-    private int leftJoinAttrIdx;
-    private int rightJoinAttrIdx;
+	private int leftJoinAttrIdx;
+	private int rightJoinAttrIdx;
     private int batchNum;
     
     private ArrayList<Integer> leftindex;   // Indices of the join attributes in left table
     private ArrayList<Integer> rightindex;  // Indices of the join attributes in right table
 
     public SortMerge(Join join) {
-        super(join.getLeft(), join.getRight(), join.getCondition(), join.getOpType());
+    	super(join.getLeft(), join.getRight(), join.getCondition(), join.getOpType());
         schema = join.getSchema();
         jointype = join.getJoinType();
         numBuff = join.getNumBuff();
@@ -50,6 +50,9 @@ import java.util.List;
         batchNum = Batch.getPageSize() / tupleSize;
 
         // Find the index of join attribute of in each relation
+        //int leftSize = getLeft().getSchema().getTupleSize();
+        //int rightSize = getRight().getSchema().getTupleSize();
+
         leftJoinAttrIdx = getLeft().getSchema().indexOf(getCondition().getLhs());
         rightJoinAttrIdx = getRight().getSchema().indexOf((Attribute) getCondition().getRhs());
 
@@ -66,6 +69,20 @@ import java.util.List;
 
     @Override
     public Batch next() {
+    	Batch joinBatch = findMatch();
+    	if (!joinBatch.isEmpty()) {
+    		return joinBatch;
+    	} else {
+    		return null;
+    	}
+    }
+    
+    @Override
+    public boolean close() {
+    	return leftSort.close() && rightSort.close();
+    }
+    
+    private Batch findMatch() {
     	Batch joinBatch = new Batch(batchNum);
     	while (!joinBatch.isFull() && leftSort.peekTuple() != null && rightSort.peekTuple() != null) {
     		Tuple leftTuple = leftSort.peekTuple();
@@ -81,14 +98,6 @@ import java.util.List;
                 joinBatch.add(joinTuple);
             }
     	}
-    	if (!joinBatch.isEmpty()) {
-    		return joinBatch;
-    	} else {
-    		return null;
-    	}
-    }
-    
-    public boolean close() {
-    	return leftSort.close() && rightSort.close();
+    	return joinBatch;
     }
 }
