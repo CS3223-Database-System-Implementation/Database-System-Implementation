@@ -31,8 +31,6 @@ import java.util.List;
         private ArrayList<Integer> listOfConditions;
         private Comparator<Tuple> tuplesComparator;
 
-        private ObjectInputStream fileStream;
-
         private int tupleSize;
         private int numOfBatch;
 
@@ -61,11 +59,6 @@ import java.util.List;
             roundNum++;
             fileNum = 0;
             finalSortedFile = merge(sortedRunFiles);	// Phase 2
-            try {
-				fileStream = new ObjectInputStream(new FileInputStream(finalSortedFile));
-			} catch (IOException e) {
-				e.printStackTrace();
-			}
             finalSortedFileReader = new TupleReader (finalSortedFile.toString(), Batch.getPageSize());
 	        return finalSortedFileReader.open();
             //return true;
@@ -82,11 +75,6 @@ import java.util.List;
         public boolean close() {
         	finalSortedFile.delete();
         	finalSortedFileReader.close();
-        	try {
-            	fileStream.close();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
             return super.close();
         }
 
