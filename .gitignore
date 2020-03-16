@@ -116,5 +116,3 @@ lib/java_cup/parse_action_row.java
 lib/java_cup/terminal_set.class
 lib/java_cup/terminal.java
 lib/java_cup/simple_calc/Main.class
-
-/bin/
