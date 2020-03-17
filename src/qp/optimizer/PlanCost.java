@@ -76,6 +76,8 @@ public class PlanCost {
             return getStatistics((Project) node);
         } else if (node.getOpType() == OpType.SCAN) {
             return getStatistics((Scan) node);
+        } else if (node.getOpType() == OpType.DISTINCT) {
+            return getStatistics((Distinct) node);
         }
         System.out.println("operator is not supported");
         isFeasible = false;
@@ -87,6 +89,14 @@ public class PlanCost {
      * * No cost involved as done on the fly
      **/
     protected long getStatistics(Project node) {
+        return calculateCost(node.getBase());
+    }
+    
+    /**
+     * Distinct will not change any statistics
+     * * No cost involved as done on the fly
+     **/
+    protected long getStatistics(Distinct node) {
         return calculateCost(node.getBase());
     }
 
@@ -143,6 +153,18 @@ public class PlanCost {
             case JoinType.NESTEDJOIN:
                 joincost = leftpages * rightpages;
                 break;
+                
+        	case JoinType.BLOCKNESTED:
+        		// fake need edit later
+        	    joincost = leftpages+(int)Math.ceil(leftpages/Batch.getPageSize())*rightpages + 20000;
+        	    break;
+        	    
+            case JoinType.SORTMERGE:
+            	long sortLeft = sortCost(leftpages, numbuff);
+            	long sortRight = sortCost(rightpages, numbuff);
+            	long mergeCost = leftpages + rightpages;
+            	joincost = sortLeft + sortRight + mergeCost; 
+            	break;
             default:
                 System.out.println("join type is not supported");
                 return 0;
@@ -153,6 +175,17 @@ public class PlanCost {
     }
 
     /**
+     * Find the cost to sort the table
+     **/
+	private long sortCost(long pages, long numbuff) {
+		long sortedRunsNum = (long) Math.ceil(pages/numbuff);
+		long mergeSortedRunsNum = (long) Math.ceil(Math.log(sortedRunsNum)/Math.log(numbuff - 1));
+		long totalPasses = 1 + mergeSortedRunsNum;
+		long costToSortPages = 2 * pages * totalPasses;
+		return costToSortPages;
+	}
+
+	/**
      * Find number of incoming tuples, Using the selectivity find # of output tuples
      * * And statistics about the attributes
      * * Selection is performed on the fly, so no cost involved

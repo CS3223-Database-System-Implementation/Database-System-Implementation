@@ -84,6 +84,18 @@ public class Scan extends Operator {
         }
         return tuples;
     }
+    
+    /**
+     * returns a block of tuples that satisfies the
+     * * condition specified on the tuples coming from base operator
+     **/
+    public Batch nextBlock(int size) {
+    	int temp = batchsize;
+    	batchsize = size;
+    	Batch out = next();
+    	batchsize = temp;
+    	return out;
+    }
 
     /**
      * Close the file.. This routine is called when the end of filed

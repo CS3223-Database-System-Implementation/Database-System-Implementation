@@ -14,10 +14,14 @@
 /Ans_query3_9.out
 /Ans_query33.out
 /Ans_query333.out
+/Ans_query3_13.out
+/Ans_query3_14.out
 /Ans_query3_15.out
 /Ans_query3_15_done.out
 /Ans_query3_slow_2_3.841.out
 /Ans_query3_slow_3.out
+/Ans_query33.out
+/Ans_query333.out
 /Ans_query3_sm_1.out
 /Ans_query3_sm_2_2.016.out
 /Ans_query3_sm_3.out
@@ -31,3 +35,4 @@
 /CARTDETAILS.stat
 /CARTDETAILS.txt
 /CUSTOMER.stat
+/BILL.txt

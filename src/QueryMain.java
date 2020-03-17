@@ -99,6 +99,9 @@ public class QueryMain {
                 }
             } else numBuff = Integer.parseInt(args[3]);
             BufferManager bm = new BufferManager(numBuff, numJoin);
+        } else {
+        	//BUG IDENTIFIED. FIX to set buffer to be 3 if there are no joins: ADDED TO FIX BUG?
+        	BufferManager bm = new BufferManager(3, 0);
         }
 
         /** Check the number of buffers available is enough or not **/
@@ -160,6 +163,7 @@ public class QueryMain {
             System.out.println("Root: Error in opening of root");
             System.exit(1);
         }
+
         try {
             out = new PrintWriter(new BufferedWriter(new FileWriter(resultfile)));
         } catch (IOException io) {
@@ -171,7 +175,7 @@ public class QueryMain {
         Schema schema = root.getSchema();
         numAtts = schema.getNumCols();
         printSchema(schema);
-
+       
         /** Print each tuple in the result **/
         Batch resultbatch;
         while ((resultbatch = root.next()) != null) {

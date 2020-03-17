@@ -55,6 +55,22 @@ public class RandomOptimizer {
                     nj.setRight(right);
                     nj.setNumBuff(numbuff);
                     return nj;
+                    
+                case JoinType.BLOCKNESTED:
+                    BlockNestedJoin bnj = new BlockNestedJoin((Join) node);
+                    bnj.setLeft(left);
+                    bnj.setRight(right);
+                    bnj.setNumBuff(numbuff);
+                    return bnj;
+                    
+    		    case JoinType.SORTMERGE:
+
+    				SortMerge sm = new SortMerge((Join) node);
+    				sm.setLeft(left);
+    				sm.setRight(right);
+    				sm.setNumBuff(numbuff);
+    				return sm;
+    				
                 default:
                     return node;
             }
@@ -65,6 +81,10 @@ public class RandomOptimizer {
         } else if (node.getOpType() == OpType.PROJECT) {
             Operator base = makeExecPlan(((Project) node).getBase());
             ((Project) node).setBase(base);
+            return node;
+        } else if (node.getOpType() == OpType.DISTINCT) {
+            Operator base = makeExecPlan(((Distinct) node).getBase());
+            ((Distinct) node).setBase(base);
             return node;
         } else {
             return node;

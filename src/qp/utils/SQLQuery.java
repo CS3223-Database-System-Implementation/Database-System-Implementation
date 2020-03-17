@@ -43,6 +43,7 @@ public class SQLQuery {
         groupbyList = new ArrayList<>();
         orderbyList = new ArrayList<>();
         selectionList = new ArrayList<>();
+        
     }
 
     /**
