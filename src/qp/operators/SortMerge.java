@@ -17,8 +17,8 @@ import java.util.LinkedList;
 import java.util.List;
 
 public class SortMerge extends Join {
-	private ExternalSort leftSort;
-	private ExternalSort rightSort;
+	private ExternalSortMerge leftSort;
+	private ExternalSortMerge rightSort;
 
 	private int leftJoinAttrIdx;
 	private int rightJoinAttrIdx;
@@ -57,8 +57,8 @@ public class SortMerge extends Join {
         rightJoinAttrIdx = getRight().getSchema().indexOf((Attribute) getCondition().getRhs());
 
         // Sort the 2 relations
-        leftSort = new ExternalSort(left, leftindex, numBuff);
-        rightSort = new ExternalSort(right, rightindex, numBuff);
+        leftSort = new ExternalSortMerge(left, leftindex, numBuff);
+        rightSort = new ExternalSortMerge(right, rightindex, numBuff);
 
         if (!(leftSort.open() && rightSort.open())) {
             return false;

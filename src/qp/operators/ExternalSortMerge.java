@@ -16,7 +16,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 
-public class ExternalSort extends Operator {
+public class ExternalSortMerge extends Operator {
 
 	private static int NUMBER_OF_EXTERNALSORT = 0;
 	private int number;
@@ -39,7 +39,7 @@ public class ExternalSort extends Operator {
 	 * num of passes = 1 + ceil( log(ceil(N/B)) / log(B-1) )
 	 * total IO cost = 2N * num of passes
 	 */
-     public ExternalSort(Operator source, ArrayList<Integer> listOfConditions, int numBuffers) {
+     public ExternalSortMerge(Operator source, ArrayList<Integer> listOfConditions, int numBuffers) {
     	 super(OpType.SORT);
     	 this.number = NUMBER_OF_EXTERNALSORT++;
     	 this.source = source;
