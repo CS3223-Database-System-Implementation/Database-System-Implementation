@@ -74,7 +74,6 @@ public class TupleReader {
         if (completed) return null;
         // Already know the next tuple
         if (peekTuple != null) return peekTuple;
-
         // If the next tuple is in the next batch, we have to read from the file
         if (inBatch == null) {
             try {
