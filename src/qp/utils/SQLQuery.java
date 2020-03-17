@@ -43,8 +43,6 @@ public class SQLQuery {
         groupbyList = new ArrayList<>();
         orderbyList = new ArrayList<>();
         selectionList = new ArrayList<>();
-        System.out.println(list1);
-        System.out.println(list2);
         
     }
 
