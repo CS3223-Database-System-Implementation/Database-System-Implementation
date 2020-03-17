@@ -25,7 +25,6 @@ public class QueryMain {
         }
 
         BufferedReader in = new BufferedReader(new InputStreamReader(System.in));
-        System.out.println("set page size");
         Batch.setPageSize(getPageSize(args, in));
 
         SQLQuery sqlquery = getSQLQuery(args[0]);
@@ -101,7 +100,7 @@ public class QueryMain {
             } else numBuff = Integer.parseInt(args[3]);
             BufferManager bm = new BufferManager(numBuff, numJoin);
         } else {
-        	// set buffer to be 1000 if there are no joins: ADDED TO FIX BUG?
+        	//BUG IDENTIFIED. FIX to set buffer to be 1000 if there are no joins: ADDED TO FIX BUG?
         	BufferManager bm = new BufferManager(3, 0);
         }
 
