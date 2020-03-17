@@ -1,4 +1,11 @@
-/bin/
+/BILL.det
+/CART.det
+/CART.md
+/CART.stat
+/CART.tbl
+/CARTDETAILS.det
+/ExternalSort0,rN3,fN0
+/ExternalSort1,rN3,fN0
 lib/java_cup/parser.cup
 lib/java_cup/parser.class
 lib/java_cup/parse_reduce_table.java

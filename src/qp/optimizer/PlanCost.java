@@ -174,7 +174,7 @@ public class PlanCost {
         return outtuples;
     }
 
-	/**
+    /**
      * Find the cost to sort the table
      **/
 	private long sortCost(long pages, long numbuff) {
