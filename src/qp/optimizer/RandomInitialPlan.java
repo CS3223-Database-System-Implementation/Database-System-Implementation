@@ -65,7 +65,9 @@ public class RandomInitialPlan {
             createJoinOp();
         }
         createProjectOp();
-        createDistinctOp();
+        if (this.sqlquery.isDistinct()) {
+            createDistinctOp();
+        }
 
         return root;
     }
