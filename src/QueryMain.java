@@ -25,6 +25,7 @@ public class QueryMain {
         }
 
         BufferedReader in = new BufferedReader(new InputStreamReader(System.in));
+        System.out.println("set page size");
         Batch.setPageSize(getPageSize(args, in));
 
         SQLQuery sqlquery = getSQLQuery(args[0]);
@@ -99,6 +100,9 @@ public class QueryMain {
                 }
             } else numBuff = Integer.parseInt(args[3]);
             BufferManager bm = new BufferManager(numBuff, numJoin);
+        } else {
+        	// set buffer to be 1000 if there are no joins: ADDED TO FIX BUG?
+        	BufferManager bm = new BufferManager(3, 0);
         }
 
         /** Check the number of buffers available is enough or not **/
@@ -160,6 +164,7 @@ public class QueryMain {
             System.out.println("Root: Error in opening of root");
             System.exit(1);
         }
+
         try {
             out = new PrintWriter(new BufferedWriter(new FileWriter(resultfile)));
         } catch (IOException io) {
@@ -171,7 +176,7 @@ public class QueryMain {
         Schema schema = root.getSchema();
         numAtts = schema.getNumCols();
         printSchema(schema);
-
+       
         /** Print each tuple in the result **/
         Batch resultbatch;
         while ((resultbatch = root.next()) != null) {
