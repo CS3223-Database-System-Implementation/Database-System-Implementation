@@ -80,7 +80,6 @@ public class ExternalSort extends Operator {
     	// base.next will propagate to the root of the query tree -> likely to be Scan.next()
     	// Scan.next() will return a page of tuples
     	Batch inBatch = base.next();
-
     	//Based on the number of buffers, perform sorting to these number of tuples that  
     	//fill the entire buffer space
 		int numRuns=0;
@@ -256,10 +255,9 @@ public class ExternalSort extends Operator {
     }
 
     public Object clone() {
-        String newtab = tabname;
-        ExternalSort newscan = new ExternalSort ( base, projectList, projectListIndices, OpType.EXTERNALSORT, batchSize) ;
-        newscan.setSchema((Schema) schema.clone());
-        return newscan;
+        ExternalSort newExternalSort = new ExternalSort ( base, projectList, projectListIndices, OpType.EXTERNALSORT, batchSize) ;
+        newExternalSort.setSchema((Schema) schema.clone());
+        return newExternalSort;
     }
 
 }

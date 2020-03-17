@@ -31,15 +31,6 @@ public class SQLQuery {
         orderbyList = new ArrayList<>();
         joinList = new ArrayList<>();
         splitConditionList(conditionList);
-        System.out.println(list1);
-        System.out.println(list2);
-        System.out.println(list3);
-        for(Condition i: list3) {
-        	System.out.println(i.getRhs());
-        	System.out.println(i.getLhs());
-        	System.out.println(i.getExprType());
-        	System.out.println(i.getOpType());
-        }
     }
 
     // 12 july 2003 (whtok)

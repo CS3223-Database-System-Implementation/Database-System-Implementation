@@ -29,8 +29,6 @@ public class Distinct extends Operator {
 
     Tuple previousTuple;
     private ExternalSort sortedBase;
-   
-    private boolean eos = false; // Records whether we have reached end-of-stream.
     
     public Distinct(Operator base, ArrayList<Attribute> as, int type) {
         super(type);
@@ -99,7 +97,6 @@ public class Distinct extends Operator {
 
         for (int i = 0; i < inbatch.size(); i++) {
             Tuple basetuple = inbatch.get(i);
-            // Debug.PPrint(basetuple);
             ArrayList<Object> present = new ArrayList<>();
             for (int j = 0; j < attrset.size(); j++) {
                 Object data = basetuple.dataAt(attrIndex[j]);

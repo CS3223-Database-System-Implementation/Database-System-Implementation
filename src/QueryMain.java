@@ -100,7 +100,7 @@ public class QueryMain {
             } else numBuff = Integer.parseInt(args[3]);
             BufferManager bm = new BufferManager(numBuff, numJoin);
         } else {
-        	//BUG IDENTIFIED. FIX to set buffer to be 1000 if there are no joins: ADDED TO FIX BUG?
+        	//BUG IDENTIFIED. FIX to set buffer to be 3 if there are no joins: ADDED TO FIX BUG?
         	BufferManager bm = new BufferManager(3, 0);
         }
 
