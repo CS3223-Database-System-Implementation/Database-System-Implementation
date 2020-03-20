@@ -8,6 +8,7 @@ import qp.utils.Attribute;
 import qp.utils.Batch;
 import qp.utils.Schema;
 import qp.utils.Tuple;
+import qp.utils.AggregateAttribute;
 
 import java.util.ArrayList;
 
@@ -17,6 +18,7 @@ public class Project extends Operator {
     ArrayList<Attribute> attrset;  // Set of attributes to project
     int batchsize;                 // Number of tuples per outbatch
 
+    ArrayList<AggregateAttribute> aggregate = new ArrayList<AggregateAttribute>();  // Set of attributes to do aggregation on
     /**
      * The following fields are required during execution
      * * of the Project Operator
@@ -29,6 +31,9 @@ public class Project extends Operator {
      * * that are to be projected
      **/
     int[] attrIndex;
+
+    Operator Aggregate;
+    boolean performAggregate; // Boolean variable to indicate whether the projected variables needs to be aggregated
 
     public Project(Operator base, ArrayList<Attribute> as, int type) {
         super(type);
@@ -58,8 +63,6 @@ public class Project extends Operator {
         int tuplesize = schema.getTupleSize();
         batchsize = Batch.getPageSize() / tuplesize;
 
-        // This base.open will go all the way back to the first Operator object in the root.
-        // Most probably Scan.open() which will open, read the file and return them
         if (!base.open()) return false;
 
         /** The following loop finds the index of the columns that
@@ -67,18 +70,26 @@ public class Project extends Operator {
          **/
         Schema baseSchema = base.getSchema();
         attrIndex = new int[attrset.size()];
+        performAggregate = false;
+
+        //Go through all attributes to be projected.
         for (int i = 0; i < attrset.size(); ++i) {
             Attribute attr = attrset.get(i);
-
-            if (attr.getAggType() != Attribute.NONE) {
-                System.err.println("Aggragation is not implemented.");
-                System.exit(1);
-            }
-
             int index = baseSchema.indexOf(attr.getBaseAttribute());
             attrIndex[i] = index;
+
+            // Check if projected attribute needs to be aggregated
+            if (attr.getAggType() != Attribute.NONE) {
+                performAggregate=true;
+                aggregate.add( new AggregateAttribute(index, attr.getAggType()));
+            }
         }
-        
+
+        if(performAggregate==true){
+            Aggregate = new Aggregate(base, aggregate, attrset, attrIndex, OpType.AGGREGATE, tuplesize );
+            Aggregate.open(); //Need to read through all the values and return here the required values
+        }
+
         return true;
     }
 
@@ -87,26 +98,54 @@ public class Project extends Operator {
      */
     public Batch next() {
         outbatch = new Batch(batchsize); // Remember to modify batchsize to 2 for testing
-        /** all the tuples in the inbuffer goes to the output buffer **/
-        inbatch = base.next();
+
+        if(performAggregate==true){
+            inbatch = Aggregate.next();
+        } else {
+            inbatch = base.next();
+        }
 
         if (inbatch == null) {
             return null;
         }
-
+        Tuple previousTuple=null;
         for (int i = 0; i < inbatch.size(); i++) {
             Tuple basetuple = inbatch.get(i);
-            //Debug.PPrint(basetuple);
-            //System.out.println();
             ArrayList<Object> present = new ArrayList<>();
+            boolean hasAggregate = false;
             for (int j = 0; j < attrset.size(); j++) {
-                Object data = basetuple.dataAt(attrIndex[j]);
-                present.add(data);
+                if (attrset.get(j).getAggType() != Attribute.NONE) {
+                    hasAggregate = true;
+                    int count=0;
+                    for (AggregateAttribute AA : aggregate) {
+                        count+=1;
+                        if (AA.getAttributeIndex() == attrIndex[j] && AA.getAggregateType() == attrset.get(j).getAggType()) {
+                            Object data = basetuple.dataAt(base.getSchema().getNumCols()+count-1);
+                            present.add(data);
+                            break;
+                        }
+                    }
+                } else {
+                    Object data = basetuple.dataAt(attrIndex[j]);
+                    present.add(data);
+                }
             }
             Tuple outtuple = new Tuple(present);
-            outbatch.add(outtuple);
+
+            // If Aggregated Attributes are present in tuple, check for duplicates and remove them
+            if(hasAggregate && (previousTuple==null || checkDuplicate(previousTuple, outtuple))){
+                outbatch.add(outtuple);
+                previousTuple = outtuple;
+
+            } else if(!hasAggregate) {
+                outbatch.add(outtuple);
+                previousTuple = outtuple;
+            }
+
         }
+
         return outbatch;
+
     }
 
     /**
@@ -116,6 +155,21 @@ public class Project extends Operator {
         inbatch = null;
         base.close();
         return true;
+    }
+
+    /**
+     * @param previoustuple
+     * @param currenttuple
+     * @return false if both tuples are same.
+     */
+    private boolean checkDuplicate(Tuple previoustuple, Tuple currenttuple) {
+        //Compare every attribute of the tuples to check for duplicate
+        for(int i=0; i<currenttuple.data().size(); i++){
+            if(Tuple.compareTuples(previoustuple, currenttuple, i)!=0) {
+                return true;
+            }
+        }
+        return false;
     }
 
     public Object clone() {
