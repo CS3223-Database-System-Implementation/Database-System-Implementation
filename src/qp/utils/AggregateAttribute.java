@@ -26,7 +26,7 @@ public class AggregateAttribute {
             count=0;
         }
     }
-    
+
     public void setAggregateVal(Tuple t){
         Object val = t.dataAt(attributeIndex);
         if(val instanceof Integer){
