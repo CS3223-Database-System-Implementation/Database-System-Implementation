@@ -4,7 +4,7 @@ public class AggregateAttribute {
 
     private int attributeIndex;
     private int aggregateType;
-    private int aggregateVal;
+    private Object aggregateVal;
     private int sum;
     private int count;
 
@@ -13,9 +13,9 @@ public class AggregateAttribute {
         this.attributeIndex = attributeIndex;
         this.aggregateType = aggregateType;
         if(aggregateType==Attribute.MAX){
-            aggregateVal=Integer.MIN_VALUE;
+            aggregateVal=null;
         } else if (aggregateType==Attribute.MIN){
-            aggregateVal=Integer.MAX_VALUE;
+            aggregateVal=null;
         } else if (aggregateType==Attribute.SUM){
             aggregateVal=0;
         } else if (aggregateType==Attribute.COUNT) {
@@ -26,25 +26,37 @@ public class AggregateAttribute {
             count=0;
         }
     }
-
+    
     public void setAggregateVal(Tuple t){
-        int val = (int)t.dataAt(attributeIndex);
-        if(aggregateType==Attribute.MAX && aggregateVal<val){
-            aggregateVal=val;
-        } else if (aggregateType==Attribute.MIN && aggregateVal>val){
-            aggregateVal=val;
-        } else if (aggregateType==Attribute.SUM){
-            aggregateVal+=val;
-        } else if (aggregateType==Attribute.COUNT) {
-            aggregateVal+=1;
-        } else if (aggregateType==Attribute.AVG) {
-            sum+=val;
-            count+=1;
-            aggregateVal=sum/count;
+        Object val = t.dataAt(attributeIndex);
+        if(val instanceof Integer){
+            if(aggregateType==Attribute.MAX && (aggregateVal==null || (int)aggregateVal<(int)val)){
+                aggregateVal=val;
+            } else if (aggregateType==Attribute.MIN && (aggregateVal==null || ((int)aggregateVal>(int)val))){
+                aggregateVal=val;
+            } else if (aggregateType==Attribute.SUM){
+                aggregateVal=(int)aggregateVal+(int)val;
+            } else if (aggregateType==Attribute.COUNT) {
+                aggregateVal=(int)aggregateVal+1;
+            } else if (aggregateType==Attribute.AVG) {
+                sum=sum+(int)val;
+                count+=1;
+                aggregateVal=sum/count;
+            }
+        } else if (val instanceof String){
+            String valString = (String) val;
+            if(aggregateType==Attribute.MAX && (aggregateVal==null || (valString.compareTo((String)aggregateVal)<0))){
+                aggregateVal=valString;
+            } else if (aggregateType==Attribute.MIN && (aggregateVal==null || valString.compareTo((String)aggregateVal)>0)){
+                aggregateVal=valString;
+            } else if (aggregateType==Attribute.COUNT) {
+                aggregateVal=(int)aggregateVal+1;
+            }
         }
 
+
     }
-    public int getAggregatedVal() {
+    public Object getAggregatedVal() {
         return aggregateVal;
     }
 
