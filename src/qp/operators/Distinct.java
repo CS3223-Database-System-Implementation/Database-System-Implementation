@@ -72,7 +72,6 @@ public class Distinct extends Operator {
             int index = baseSchema.indexOf(attr.getBaseAttribute());
             attrIndex[i] = index;
         }
-        System.out.println("DISTINCT OPEN");
         sortedBase = new ExternalSort(base, attrset, attrIndex, OpType.EXTERNALSORT, batchsize);
         return sortedBase.open();
     }
@@ -81,8 +80,6 @@ public class Distinct extends Operator {
      * Read next tuple from operator
      */
     public Batch next() {
-
-        System.out.println("DISTINCT NEXT");
         inbatch = sortedBase.next();
         if(inbatch==null) {
         	close();
