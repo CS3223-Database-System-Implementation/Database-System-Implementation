@@ -1,0 +1,5 @@
+3
+20
+aid INTEGER 10000 PK 4
+aname INTEGER 500 NK 12
+cruisingrange INTEGER 2500 NK 4
