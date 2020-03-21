@@ -45,7 +45,7 @@ public class Scan extends Operator {
         int tuplesize = schema.getTupleSize();
         batchsize = Batch.getPageSize() / tuplesize;
         
-        //BUG IDENTIFIED  Throw error if PageSize must be bigger than TupleSize. Instead of going to an infinite loop.
+        //BUG IDENTIFIED  Throw error if PageSize is be smaller than TupleSize. Instead of going to an infinite loop.
         if (batchsize == 0) {
             System.err.println(" PageSize must be bigger than TupleSize. ");
             return false;
