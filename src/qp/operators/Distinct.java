@@ -90,7 +90,6 @@ public class Distinct extends Operator {
         }
         
         //sortedBase = new ExternalSort(base, attrset, attrIndex, OpType.EXTERNALSORT, batchsize);
-        int temp = Batch.getPageSize();
         sortedBase = new ExternalSortMerge(base, indexArray, numBuff);
         return sortedBase.open();
     }
