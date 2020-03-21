@@ -62,6 +62,7 @@ public class ExternalSort extends Operator {
             return null;
         }
         Batch tuples = new Batch(batchSize);
+        
         // Batch tuples = new Batch(2); //TESTING
         while (!tuples.isFull()) {
         	if(finalSortedTuples.size()>0) {
@@ -74,11 +75,27 @@ public class ExternalSort extends Operator {
         return tuples;
     }
     
+    public Tuple nextTuple() {
+   	 return finalSortedTuples.remove(0);
+    }
+	
+    public Tuple peekTuple() {
+    	if (finalSortedTuples.size()>0) {
+    		return finalSortedTuples.get(0);
+
+    	} else {
+    		return null;
+    	}
+    } 
+    
     private int generateSortedRuns() {
     	// Read one page of tuples
     	// base will be the base that was stored inside Distinct Operator
     	// base.next will propagate to the root of the query tree -> likely to be Scan.next()
     	// Scan.next() will return a page of tuples
+   	 	if (!base.open()) {
+   	 		return 0;
+   	 	}
     	Batch inBatch = base.next();
     	//Based on the number of buffers, perform sorting to these number of tuples that  
     	//fill the entire buffer space
