@@ -44,6 +44,12 @@ public class Scan extends Operator {
         /** num of tuples per batch**/
         int tuplesize = schema.getTupleSize();
         batchsize = Batch.getPageSize() / tuplesize;
+        
+        //BUG IDENTIFIED  Throw error if PageSize must be bigger than TupleSize. Instead of going to an infinite loop.
+        if (batchsize == 0) {
+            System.err.println(" PageSize must be bigger than TupleSize. ");
+            return false;
+        }
         eos = false;
         try {
             in = new ObjectInputStream(new FileInputStream(filename));
