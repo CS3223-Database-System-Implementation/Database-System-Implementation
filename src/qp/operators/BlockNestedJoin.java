@@ -49,6 +49,11 @@ public class BlockNestedJoin extends Join {
         batchsize = Batch.getPageSize() / tuplesize;
         blocksize = (numBuff - 2) * batchsize;
 
+        if (batchsize < 1) {
+            //BUG IDENTIFIED  Throw error if PageSize is be smaller than TupleSize. Instead of going to an infinite loop.
+            System.err.println(" PageSize must be bigger than join TupleSize. ");
+            return false;
+        }
         /** find indices attributes of join conditions **/
         leftindex = new ArrayList<>();
         rightindex = new ArrayList<>();

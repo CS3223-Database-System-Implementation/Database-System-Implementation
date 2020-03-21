@@ -65,6 +65,12 @@ public class SortMerge extends Join {
         int tupleSize = getSchema().getTupleSize();
         int temp = Batch.getPageSize();
         batchNum = Batch.getPageSize() / tupleSize;
+        
+        if (batchNum < 1) {
+            //BUG IDENTIFIED  Throw error if PageSize is be smaller than TupleSize. Instead of going to an infinite loop.
+            System.err.println(" PageSize must be bigger than join TupleSize. ");
+            return false;
+        }
 
         // Find the index of join attribute of in each relation
         //int leftSize = getLeft().getSchema().getTupleSize();
