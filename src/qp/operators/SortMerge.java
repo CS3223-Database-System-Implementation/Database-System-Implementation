@@ -19,6 +19,9 @@ import java.util.List;
 public class SortMerge extends Join {
 	private ExternalSortMerge leftSort;
 	private ExternalSortMerge rightSort;
+	
+	//private ExternalSort leftExternalSort;
+	//private ExternalSort rightExternalSort;
 
 	private int leftJoinAttrIdx;
 	private int rightJoinAttrIdx;
@@ -26,6 +29,10 @@ public class SortMerge extends Join {
     
     private ArrayList<Integer> leftindex;   // Indices of the join attributes in left table
     private ArrayList<Integer> rightindex;  // Indices of the join attributes in right table
+    
+    int[] leftAttrIndex;
+    int[] rightAttrIndex;
+
 
     public SortMerge(Join join) {
     	super(join.getLeft(), join.getRight(), join.getCondition(), join.getOpType());
@@ -38,15 +45,25 @@ public class SortMerge extends Join {
     public boolean open() {
         leftindex = new ArrayList<>();
         rightindex = new ArrayList<>();
+        
+        leftAttrIndex = new int[conditionList.size()];
+        rightAttrIndex = new int[conditionList.size()];
+        
+        int i = 0;
         for (Condition con : conditionList) {
             Attribute leftattr = con.getLhs();
             Attribute rightattr = (Attribute) con.getRhs();
             leftindex.add(left.getSchema().indexOf(leftattr));
             rightindex.add(right.getSchema().indexOf(rightattr));
+            
+            leftAttrIndex[i] = left.getSchema().indexOf(leftattr);
+            rightAttrIndex[i] = right.getSchema().indexOf(rightattr);
+            i++;
         }
 
         // Find the batch size
         int tupleSize = getSchema().getTupleSize();
+        int temp = Batch.getPageSize();
         batchNum = Batch.getPageSize() / tupleSize;
 
         // Find the index of join attribute of in each relation
@@ -59,6 +76,9 @@ public class SortMerge extends Join {
         // Sort the 2 relations
         leftSort = new ExternalSortMerge(left, leftindex, numBuff);
         rightSort = new ExternalSortMerge(right, rightindex, numBuff);
+        
+        //leftExternalSort = new ExternalSort(left, null, leftAttrIndex, OpType.EXTERNALSORT, batchNum);
+        //rightExternalSort = new ExternalSort(right, null, rightAttrIndex, OpType.EXTERNALSORT, batchNum);        
 
         if (!(leftSort.open() && rightSort.open())) {
             return false;
@@ -79,7 +99,8 @@ public class SortMerge extends Join {
     
     @Override
     public boolean close() {
-    	return leftSort.close() && rightSort.close();
+    	//return leftExternalSort.close() && rightExternalSort.close();
+    	return true;
     }
     
     private Batch findMatch() {
@@ -89,12 +110,12 @@ public class SortMerge extends Join {
     		Tuple rightTuple = rightSort.peekTuple();
     		int comparison = Tuple.compareTuples(leftTuple, rightTuple, leftJoinAttrIdx, rightJoinAttrIdx);
             if (comparison < 0) {           
-                leftSort.nextTuple();
+            	leftSort.nextTuple();
             } else if (comparison > 0) {
             	rightSort.nextTuple();
             } else {  
                 Tuple joinTuple = leftTuple.joinWith(rightTuple);
-            	rightSort.nextTuple();
+                rightSort.nextTuple();
                 joinBatch.add(joinTuple);
             }
     	}

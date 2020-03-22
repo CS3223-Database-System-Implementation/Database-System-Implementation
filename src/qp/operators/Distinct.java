@@ -12,7 +12,9 @@ public class Distinct extends Operator {
 
     Operator base;                 // Base table to project
     ArrayList<Attribute> attrset;  // Set of attributes to project
+    private ArrayList<Integer> indexArray;
     int batchsize;                 // Number of tuples per outbatch
+    int numBuff;
 
     /**
      * The following fields are required during execution
@@ -28,7 +30,9 @@ public class Distinct extends Operator {
     int[] attrIndex;
 
     Tuple previousTuple;
-    private ExternalSort sortedBase;
+    //private ExternalSort sortedBase;
+    private ExternalSortMerge sortedBase;
+
     
     public Distinct(Operator base, ArrayList<Attribute> as, int type) {
         super(type);
@@ -43,6 +47,10 @@ public class Distinct extends Operator {
 
     public void setBase(Operator base) {
         this.base = base;
+    }
+    
+    public void setNumBuff(int numBuff ) {
+        this.numBuff = numBuff;
     }
 
     public ArrayList<Attribute> getProjAttr() {
@@ -59,13 +67,15 @@ public class Distinct extends Operator {
         int tuplesize = schema.getTupleSize();
         batchsize = Batch.getPageSize() / tuplesize;
 
-        if (!base.open()) return false;
+        //if (!base.open()) return false;
 
         /** The following loop finds the index of the columns that
          ** are required from the base operator
          **/
         Schema baseSchema = base.getSchema();
         attrIndex = new int[attrset.size()];
+        indexArray = new ArrayList<>();
+
         for (int i = 0; i < attrset.size(); ++i) {
             Attribute attr = attrset.get(i);
 
@@ -76,9 +86,11 @@ public class Distinct extends Operator {
 
             int index = baseSchema.indexOf(attr.getBaseAttribute());
             attrIndex[i] = index;
+            indexArray.add(index);
         }
         
-        sortedBase = new ExternalSort(base, attrset, attrIndex, OpType.EXTERNALSORT, batchsize);
+        //sortedBase = new ExternalSort(base, attrset, attrIndex, OpType.EXTERNALSORT, batchsize);
+        sortedBase = new ExternalSortMerge(base, indexArray, numBuff);
         return sortedBase.open();
     }
 

@@ -65,6 +65,23 @@ public class ExternalSortMerge extends Operator {
     	 //return true;
      }
 	
+     public Batch next() {
+         /** The file reached its end and no more to read **/
+    	 
+    	 if (finalSortedFileReader.peek() == null) {
+    		 return null;
+    	 }
+         Batch tuples = new Batch(numOfBatch);
+         
+         // Batch tuples = new Batch(2); //TESTING
+         while (!tuples.isFull() && finalSortedFileReader.peek() != null) {
+         	if(finalSortedFileReader.peek() != null) {
+         		tuples.add(finalSortedFileReader.next());
+         	} 
+         }
+         return tuples;
+     }
+     
      public Tuple nextTuple() {
     	 return finalSortedFileReader.next();
      }
