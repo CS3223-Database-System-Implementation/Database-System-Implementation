@@ -155,8 +155,7 @@ public class PlanCost {
                 break;
                 
         	case JoinType.BLOCKNESTED:
-        		// fake need edit later
-        	    joincost = leftpages+(int)Math.ceil(leftpages/Batch.getPageSize())*rightpages + 20000;
+        		joincost = leftpages+(int)Math.ceil(leftpages/(numbuff - 2))*rightpages;
         	    break;
         	    
             case JoinType.SORTMERGE:
