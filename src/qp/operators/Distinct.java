@@ -28,12 +28,10 @@ public class Distinct extends Operator {
      * * that are to be projected
      **/
     int[] attrIndex;
-
     Tuple previousTuple;
-    //private ExternalSort sortedBase;
     private ExternalSortMerge sortedBase;
 
-    
+
     public Distinct(Operator base, ArrayList<Attribute> as, int type) {
         super(type);
         this.base = base;
@@ -48,7 +46,7 @@ public class Distinct extends Operator {
     public void setBase(Operator base) {
         this.base = base;
     }
-    
+
     public void setNumBuff(int numBuff ) {
         this.numBuff = numBuff;
     }
@@ -68,7 +66,7 @@ public class Distinct extends Operator {
         int tuplesize = schema.getTupleSize();
         batchsize = Batch.getPageSize() / tuplesize;
 
-        //if (!base.open()) return false;
+        if (!base.open()) return false;
 
         /** The following loop finds the index of the columns that
          ** are required from the base operator
@@ -93,10 +91,10 @@ public class Distinct extends Operator {
     public Batch next() {
         inbatch = sortedBase.next();
         if(inbatch==null) {
-        	close();
-        	return null;
+            close();
+            return null;
         }
-        
+
         outbatch = new Batch(batchsize);
 
         for (int i = 0; i < inbatch.size(); i++) {
@@ -110,8 +108,8 @@ public class Distinct extends Operator {
             //To detect duplicates in a sorted input, we only check current tuple
             //against the previous tuple
             if(previousTuple==null || checkDuplicate(previousTuple, outtuple)) {
-            	outbatch.add(outtuple);
-            	previousTuple=outtuple;
+                outbatch.add(outtuple);
+                previousTuple=outtuple;
             }
         }
         return outbatch;
@@ -125,21 +123,21 @@ public class Distinct extends Operator {
         base.close();
         return true;
     }
-    
+
     /**
      * @param previoustuple
-     * @param currenttuple  
+     * @param currenttuple
      * @return false if both tuples are same.
      */
     private boolean checkDuplicate(Tuple previoustuple, Tuple currenttuple) {
-    	
-    	//Compare every attribute of the tuples to check for duplicate
-    	for (int index: attrIndex) {
-    		if(Tuple.compareTuples(previoustuple, currenttuple, index)!=0) {
-    			return true;
-    		}
-    	}
-    	return false;
+
+        //Compare every attribute of the tuples to check for duplicate
+        for (int index: attrIndex) {
+            if(Tuple.compareTuples(previoustuple, currenttuple, index)!=0) {
+                return true;
+            }
+        }
+        return false;
     }
 
     public Object clone() {

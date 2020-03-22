@@ -34,11 +34,12 @@ public class Project extends Operator {
 
     Operator Aggregate;
     boolean performAggregate; // Boolean variable to indicate whether the projected variables needs to be aggregated
-
+    Tuple previousTuple;
     public Project(Operator base, ArrayList<Attribute> as, int type) {
         super(type);
         this.base = base;
         this.attrset = as;
+        this.previousTuple=null;
     }
 
     public Operator getBase() {
@@ -108,7 +109,7 @@ public class Project extends Operator {
         if (inbatch == null) {
             return null;
         }
-        Tuple previousTuple=null;
+
         for (int i = 0; i < inbatch.size(); i++) {
             Tuple basetuple = inbatch.get(i);
             ArrayList<Object> present = new ArrayList<>();

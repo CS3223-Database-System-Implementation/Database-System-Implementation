@@ -62,13 +62,13 @@ public class Aggregate extends Operator {
                 }
                 // Add new fields (Aggregate) to the back
                 for (int j = 0; j < attrset.size(); j++) {
-                  if (attrset.get(j).getAggType() != Attribute.NONE) {
-                      for (AggregateAttribute AA : aggregate) {
-                          if (AA.getAttributeIndex() == attrIndex[j] && AA.getAggregateType() == attrset.get(j).getAggType()) {
-                              present.add(AA.getAggregatedVal());
-                          }
-                      }
-                  }
+                    if (attrset.get(j).getAggType() != Attribute.NONE) {
+                        for (AggregateAttribute AA : aggregate) {
+                            if (AA.getAttributeIndex() == attrIndex[j] && AA.getAggregateType() == attrset.get(j).getAggType()) {
+                                present.add(AA.getAggregatedVal());
+                            }
+                        }
+                    }
                 }
             } else {
                 break;
