@@ -5,6 +5,7 @@
 import qp.operators.Debug;
 import qp.operators.Operator;
 import qp.optimizer.BufferManager;
+import qp.optimizer.GreedyOptimizer;
 import qp.optimizer.PlanCost;
 import qp.optimizer.RandomOptimizer;
 import qp.parser.Scaner;
@@ -118,16 +119,20 @@ public class QueryMain {
     public static Operator getQueryPlan(SQLQuery sqlquery) {
         Operator root = null;
 
+        /*
         RandomOptimizer optimizer = new RandomOptimizer(sqlquery);
         Operator planroot = optimizer.getOptimizedPlan();
 
+        
         if (planroot == null) {
             System.out.println("DPOptimizer: query plan is null");
             System.exit(1);
         }
 
         root = RandomOptimizer.makeExecPlan(planroot);
-
+		*/
+        GreedyOptimizer optimizer = new GreedyOptimizer(sqlquery);
+        root = optimizer.getGreedyPlan();
         return root;
     }
 
