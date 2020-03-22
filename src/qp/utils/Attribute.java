@@ -55,6 +55,7 @@ public class Attribute implements Serializable {
         attrsize = size;
     }
 
+
     public void setAttrSize(int size) {
         attrsize = size;
     }

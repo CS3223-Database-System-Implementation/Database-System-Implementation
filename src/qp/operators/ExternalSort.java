@@ -101,7 +101,7 @@ public class ExternalSort extends Operator {
     	//fill the entire buffer space
 		int numRuns=0;
 		boolean done=false;
-		while(inBatch.size()!=0) {
+		while(inBatch==null || inBatch.size()!=0) {
 			if(done==true) {
 				break;
 			}
@@ -112,7 +112,7 @@ public class ExternalSort extends Operator {
 			while(tuplesInBuffer.size() < totalTuplesBufferCanHold) {
 				if(inBatch.size()==0) {
 					inBatch=base.next();
-					if(inBatch.size()==0) {
+					if(inBatch==null || inBatch.size()==0) {
 						done=true;
 						break;
 					}

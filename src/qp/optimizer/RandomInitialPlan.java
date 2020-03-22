@@ -43,6 +43,15 @@ public class RandomInitialPlan {
         return numJoin;
     }
 
+    public boolean shouldDoDistinct(){
+        for (int i=0; i<projectlist.size(); i++){
+            if(projectlist.get(i).getAggType()!=Attribute.NONE){
+                return false;
+            }
+        }
+        return true;
+    }
+
     /**
      * prepare initial plan for the query
      **/
@@ -65,9 +74,12 @@ public class RandomInitialPlan {
             createJoinOp();
         }
         createProjectOp();
-        if (this.sqlquery.isDistinct()) {
+
+        // Only execute Distinct if we do not need to do aggregation
+        if (this.sqlquery.isDistinct() && shouldDoDistinct()) {
             createDistinctOp();
         }
+
 
         return root;
     }
@@ -190,7 +202,8 @@ public class RandomInitialPlan {
             root.setSchema(newSchema);
         }
     }
-    
+
+    //Returns False if we do not want to carry out DISTINCT
     public void createDistinctOp() {
         Operator base = root;
         if (projectlist == null)
@@ -199,6 +212,7 @@ public class RandomInitialPlan {
             root = new Distinct(base, projectlist, OpType.DISTINCT);
             Schema newSchema = base.getSchema().subSchema(projectlist);
             root.setSchema(newSchema);
+
         }
     }
 
