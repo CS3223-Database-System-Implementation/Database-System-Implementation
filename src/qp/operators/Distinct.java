@@ -28,12 +28,10 @@ public class Distinct extends Operator {
      * * that are to be projected
      **/
     int[] attrIndex;
-
     Tuple previousTuple;
-    //private ExternalSort sortedBase;
     private ExternalSortMerge sortedBase;
 
-    
+
     public Distinct(Operator base, ArrayList<Attribute> as, int type) {
         super(type);
         this.base = base;
@@ -48,7 +46,7 @@ public class Distinct extends Operator {
     public void setBase(Operator base) {
         this.base = base;
     }
-    
+
     public void setNumBuff(int numBuff ) {
         this.numBuff = numBuff;
     }
@@ -63,11 +61,12 @@ public class Distinct extends Operator {
      * * projected from the base operator
      **/
     public boolean open() {
+
         /** set number of tuples per batch **/
         int tuplesize = schema.getTupleSize();
         batchsize = Batch.getPageSize() / tuplesize;
 
-        //if (!base.open()) return false;
+        if (!base.open()) return false;
 
         /** The following loop finds the index of the columns that
          ** are required from the base operator
@@ -78,18 +77,10 @@ public class Distinct extends Operator {
 
         for (int i = 0; i < attrset.size(); ++i) {
             Attribute attr = attrset.get(i);
-
-            if (attr.getAggType() != Attribute.NONE) {
-                System.err.println("Aggragation is not implemented.");
-                System.exit(1);
-            }
-
             int index = baseSchema.indexOf(attr.getBaseAttribute());
             attrIndex[i] = index;
             indexArray.add(index);
         }
-        
-        //sortedBase = new ExternalSort(base, attrset, attrIndex, OpType.EXTERNALSORT, batchsize);
         sortedBase = new ExternalSortMerge(base, indexArray, numBuff);
         return sortedBase.open();
     }
@@ -98,13 +89,12 @@ public class Distinct extends Operator {
      * Read next tuple from operator
      */
     public Batch next() {
-       
         inbatch = sortedBase.next();
         if(inbatch==null) {
-        	close();
-        	return null;
+            close();
+            return null;
         }
-        
+
         outbatch = new Batch(batchsize);
 
         for (int i = 0; i < inbatch.size(); i++) {
@@ -118,8 +108,8 @@ public class Distinct extends Operator {
             //To detect duplicates in a sorted input, we only check current tuple
             //against the previous tuple
             if(previousTuple==null || checkDuplicate(previousTuple, outtuple)) {
-            	outbatch.add(outtuple);
-            	previousTuple=outtuple;
+                outbatch.add(outtuple);
+                previousTuple=outtuple;
             }
         }
         return outbatch;
@@ -133,21 +123,21 @@ public class Distinct extends Operator {
         base.close();
         return true;
     }
-    
+
     /**
      * @param previoustuple
-     * @param currenttuple  
+     * @param currenttuple
      * @return false if both tuples are same.
      */
     private boolean checkDuplicate(Tuple previoustuple, Tuple currenttuple) {
-    	
-    	//Compare every attribute of the tuples to check for duplicate
-    	for (int index: attrIndex) {
-    		if(Tuple.compareTuples(previoustuple, currenttuple, index)!=0) {
-    			return true;
-    		}
-    	}
-    	return false;
+
+        //Compare every attribute of the tuples to check for duplicate
+        for (int index: attrIndex) {
+            if(Tuple.compareTuples(previoustuple, currenttuple, index)!=0) {
+                return true;
+            }
+        }
+        return false;
     }
 
     public Object clone() {

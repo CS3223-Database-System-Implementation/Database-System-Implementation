@@ -193,5 +193,83 @@ public class NestedJoin extends Join {
         f.delete();
         return true;
     }
+    
+    public Batch nextBlock(int size) {
+        int i, j;
+        if (eosl) {
+            return null;
+        }
+        outbatch = new Batch(batchsize);
+        while (!outbatch.isFull()) {
+            if (lcurs == 0 && eosr == true) {
+                /** new left page is to be fetched**/
+                leftbatch = (Batch) left.nextBlock(size);
+                if (leftbatch == null) {
+                    eosl = true;
+                    return outbatch;
+                }
+                /** Whenever a new left page came, we have to start the
+                 ** scanning of right table
+                 **/
+                try {
+                    in = new ObjectInputStream(new FileInputStream(rfname));
+                    eosr = false;
+                } catch (IOException io) {
+                    System.err.println("NestedJoin:error in reading the file");
+                    System.exit(1);
+                }
+
+            }
+            while (eosr == false) {
+                try {
+                    if (rcurs == 0 && lcurs == 0) {
+                        rightbatch = (Batch) in.readObject();
+                    }
+                    for (i = lcurs; i < leftbatch.size(); ++i) {
+                        for (j = rcurs; j < rightbatch.size(); ++j) {
+                            Tuple lefttuple = leftbatch.get(i);
+                            Tuple righttuple = rightbatch.get(j);
+                            if (lefttuple.checkJoin(righttuple, leftindex, rightindex)) {
+                                Tuple outtuple = lefttuple.joinWith(righttuple);
+                                outbatch.add(outtuple);
+                                if (outbatch.isFull()) {
+                                    if (i == leftbatch.size() - 1 && j == rightbatch.size() - 1) {  //case 1
+                                        lcurs = 0;
+                                        rcurs = 0;
+                                    } else if (i != leftbatch.size() - 1 && j == rightbatch.size() - 1) {  //case 2
+                                        lcurs = i + 1;
+                                        rcurs = 0;
+                                    } else if (i == leftbatch.size() - 1 && j != rightbatch.size() - 1) {  //case 3
+                                        lcurs = i;
+                                        rcurs = j + 1;
+                                    } else {
+                                        lcurs = i;
+                                        rcurs = j + 1;
+                                    }
+                                    return outbatch;
+                                }
+                            }
+                        }
+                        rcurs = 0;
+                    }
+                    lcurs = 0;
+                } catch (EOFException e) {
+                    try {
+                        in.close();
+                    } catch (IOException io) {
+                        System.out.println("NestedJoin: Error in reading temporary file");
+                    }
+                    eosr = true;
+                } catch (ClassNotFoundException c) {
+                    System.out.println("NestedJoin: Error in deserialising temporary file ");
+                    System.exit(1);
+                } catch (IOException io) {
+                    System.out.println("NestedJoin: Error in reading temporary file");
+                    System.exit(1);
+                }
+            }
+        }
+        return outbatch;
+    }
 
 }

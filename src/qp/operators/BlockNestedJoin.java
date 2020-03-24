@@ -196,4 +196,8 @@ public class BlockNestedJoin extends Join {
         return true;
     }
     
+    public Batch nextBlock(int size) {
+    	return next();
+    }
+    
 }

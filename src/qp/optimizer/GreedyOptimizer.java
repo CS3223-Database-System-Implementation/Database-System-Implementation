@@ -1,21 +1,30 @@
-/**
- * prepares a random initial plan for the given SQL query
- **/
-
 package qp.optimizer;
-
-import qp.operators.*;
-import qp.utils.*;
 
 import java.io.FileInputStream;
 import java.io.ObjectInputStream;
 import java.util.ArrayList;
 import java.util.BitSet;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.PriorityQueue;
 
-public class RandomInitialPlan {
+import qp.operators.Distinct;
+import qp.operators.Join;
+import qp.operators.JoinType;
+import qp.operators.OpType;
+import qp.operators.Operator;
+import qp.operators.Project;
+import qp.operators.Scan;
+import qp.operators.Select;
+import qp.utils.Attribute;
+import qp.utils.Condition;
+import qp.utils.RandNumb;
+import qp.utils.SQLQuery;
+import qp.utils.Schema;
 
-    SQLQuery sqlquery;
+public class GreedyOptimizer {
+	SQLQuery sqlquery;
 
     ArrayList<Attribute> projectlist;
     ArrayList<String> fromlist;
@@ -26,7 +35,7 @@ public class RandomInitialPlan {
     HashMap<String, Operator> tab_op_hash;  // Table name to the Operator
     Operator root;          // Root of the query plan tree
 
-    public RandomInitialPlan(SQLQuery sqlquery) {
+    public GreedyOptimizer(SQLQuery sqlquery) {
         this.sqlquery = sqlquery;
         projectlist = sqlquery.getProjectList();
         fromlist = sqlquery.getFromList();
@@ -35,27 +44,11 @@ public class RandomInitialPlan {
         groupbylist = sqlquery.getGroupByList();
         numJoin = joinlist.size();
     }
-
+    
     /**
-     * number of join conditions
+     * prepare plan for the query using greedy heuristic
      **/
-    public int getNumJoins() {
-        return numJoin;
-    }
-
-    public boolean shouldDoDistinct(){
-        for (int i=0; i<projectlist.size(); i++){
-            if(projectlist.get(i).getAggType()!=Attribute.NONE){
-                return false;
-            }
-        }
-        return true;
-    }
-
-    /**
-     * prepare initial plan for the query
-     **/
-    public Operator prepareInitialPlan() {
+    public Operator getGreedyPlan() {
 
         if (sqlquery.getGroupByList().size() > 0) {
             System.err.println("GroupBy is not implemented.");
@@ -74,16 +67,13 @@ public class RandomInitialPlan {
             createJoinOp();
         }
         createProjectOp();
-
-        // Only execute Distinct if we do not need to do aggregation
-        if (this.sqlquery.isDistinct() && shouldDoDistinct()) {
+        if (this.sqlquery.isDistinct()) {
             createDistinctOp();
         }
 
-
         return root;
     }
-
+    
     /**
      * Create Scan Operator for each of the table
      * * mentioned in from list
@@ -113,11 +103,6 @@ public class RandomInitialPlan {
             tab_op_hash.put(tabname, op1);
         }
 
-        // 12 July 2003 (whtok)
-        // To handle the case where there is no where clause
-        // selectionlist is empty, hence we set the root to be
-        // the scan operator. the projectOp would be put on top of
-        // this later in CreateProjectOp
         if (selectionlist.size() == 0) {
             root = tempop;
             return;
@@ -149,49 +134,94 @@ public class RandomInitialPlan {
         if (selectionlist.size() != 0)
             root = op1;
     }
-
+    
     /**
-     * create join operators
+     * create join operators based on greedy heuristic of finding the table and join method with smallest cost to join.
      **/
     public void createJoinOp() {
-        BitSet bitCList = new BitSet(numJoin);
-        int jnnum = RandNumb.randInt(0, numJoin - 1);
-        Join jn = null;
-
-        /** Repeat until all the join conditions are considered **/
-        while (bitCList.cardinality() != numJoin) {
-            /** If this condition is already consider chose
-             ** another join condition
-             **/
-            while (bitCList.get(jnnum)) {
-                jnnum = RandNumb.randInt(0, numJoin - 1);
-            }
-            Condition cn = (Condition) joinlist.get(jnnum);
-            String lefttab = cn.getLhs().getTabName();
-            String righttab = ((Attribute) cn.getRhs()).getTabName();
-            Operator left = (Operator) tab_op_hash.get(lefttab);
-            Operator right = (Operator) tab_op_hash.get(righttab);
-            jn = new Join(left, right, cn, OpType.JOIN);
-            jn.setNodeIndex(jnnum);
-            Schema newsche = left.getSchema().joinWith(right.getSchema());
+    	HashSet<String> tableNames = new HashSet<>();
+    	// Get all the names of tables that need to be joined
+    	for (Condition c : joinlist) {
+    		tableNames.add(c.getLhs().getTabName());
+    		tableNames.add(((Attribute)c.getRhs()).getTabName());
+    	}
+    	Iterator<String> it = tableNames.iterator();
+    	PlanCost pc = new PlanCost();
+    	String startName = it.next();
+    	Operator start = (Operator) tab_op_hash.get(startName);
+    	while (it.hasNext()) {
+    		String tableName = it.next();
+    		Operator table = (Operator) tab_op_hash.get(tableName);
+    		if (pc.getCost(table) < pc.getCost(start)) {
+    			startName = tableName;
+    			start = table;
+    		}
+    	}
+    	tableNames.remove(startName);
+    	String nextName = startName;
+    	PriorityQueue<Operator> queue = new PriorityQueue<>((x, y) -> (int)(pc.getCost(x) - pc.getCost(y)));
+    	HashMap<Operator, String> nameMap = new HashMap<>();
+    	HashMap<String, Condition> conditionMap = new HashMap<>();
+    	Join jn = null;
+    	while (!tableNames.isEmpty()) {   		
+    		for (Condition c : joinlist) {
+        		if (c.getLhs().getTabName().equals(nextName)) {
+        			String rhs = ((Attribute)(c.getRhs())).getTabName();
+        			if (tableNames.contains(rhs)) {
+        				Operator toAdd = tab_op_hash.get(rhs);
+        				queue.add(toAdd);
+        				nameMap.put(toAdd, rhs);
+        				conditionMap.put(rhs, c);
+        			}       			
+        		} else if (((Attribute)(c.getRhs())).getTabName().equals(nextName)) {
+        			String lhs = c.getLhs().getTabName();
+        			if (tableNames.contains(lhs)) {
+        				Operator toAdd = tab_op_hash.get(lhs);
+        				queue.add(toAdd);
+        				nameMap.put(toAdd, lhs);
+        				c.flip();
+        				conditionMap.put(lhs, c); 
+        			}        			
+        		}        		
+    		}
+    		Operator next = queue.remove();
+    		nextName = nameMap.get(next);
+    		while (!tableNames.contains(nextName)) {
+    			next = queue.remove();
+        		nextName = nameMap.get(next);
+        		if (queue.isEmpty()) {
+        			System.err.println("Error in greedy optimizer.");
+                    System.exit(1);
+        		}
+    		}
+    		Condition cn = conditionMap.get(nextName);
+    		tableNames.remove(nextName);
+    		jn = new Join(start, next, cn, OpType.JOIN);
+            Schema newsche = start.getSchema().joinWith(next.getSchema());
             jn.setSchema(newsche);
-
-            /** randomly select a join type**/
+            
+            // Select a join type with smallest cost
             int numJMeth = JoinType.numJoinTypes();
-            int joinMeth = RandNumb.randInt(0, numJMeth - 1);
-            jn.setJoinType(joinMeth);
-            modifyHashtable(left, jn);
-            modifyHashtable(right, jn);
-            bitCList.set(jnnum);
-        }
-
-        /** The last join operation is the root for the
-         ** constructed till now
-         **/
-        if (numJoin != 0)
-            root = jn;
+            long minCost = Long.MAX_VALUE;
+            for (int i = 0; i < numJMeth; i++) {
+            	Join copy = (Join)jn.clone();
+            	copy.setJoinType(i);
+            	long cost = pc.getCost(copy);
+            	if (cost < minCost) {
+            		minCost = cost;
+            		jn = copy;
+            	}
+            }
+            start = jn;
+            if (tableNames.isEmpty()) {
+            	break;
+            }
+    	} 
+    	
+    	if (numJoin != 0)
+            root = jn;    	
     }
-
+    
     public void createProjectOp() {
         Operator base = root;
         if (projectlist == null)
@@ -202,8 +232,7 @@ public class RandomInitialPlan {
             root.setSchema(newSchema);
         }
     }
-
-    //Returns False if we do not want to carry out DISTINCT
+    
     public void createDistinctOp() {
         Operator base = root;
         if (projectlist == null)
@@ -212,7 +241,6 @@ public class RandomInitialPlan {
             root = new Distinct(base, projectlist, OpType.DISTINCT);
             Schema newSchema = base.getSchema().subSchema(projectlist);
             root.setSchema(newSchema);
-
         }
     }
 
@@ -223,4 +251,5 @@ public class RandomInitialPlan {
             }
         }
     }
+    
 }
