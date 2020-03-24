@@ -45,6 +45,12 @@ public class NestedJoin extends Join {
         /** select number of tuples per batch **/
         int tuplesize = schema.getTupleSize();
         batchsize = Batch.getPageSize() / tuplesize;
+        
+        if (batchsize < 1) {
+            //BUG IDENTIFIED  Throw error if PageSize is be smaller than TupleSize. Instead of going to an infinite loop.
+            System.err.println(" PageSize must be bigger than join TupleSize. ");
+            return false;
+        }
 
         /** find indices attributes of join conditions **/
         leftindex = new ArrayList<>();
