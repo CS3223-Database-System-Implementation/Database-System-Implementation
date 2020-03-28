@@ -47,6 +47,10 @@ public class ExternalSortMerge extends Operator {
     	 this.numBuffers = numBuffers;
      }
 
+     /**
+      * Read the file and generate sorted runs
+      * After generate the sorted runs it will begin merging the sorted runs
+      */
      @Override
      public boolean open() {
     	 if (!source.open()) {
@@ -64,7 +68,10 @@ public class ExternalSortMerge extends Operator {
     	 return finalSortedFileReader.open();
     	 //return true;
      }
-	
+     
+     /**
+      * Return a sorted batch
+      */
      public Batch next() {
          /** The file reached its end and no more to read **/
     	 
@@ -73,7 +80,6 @@ public class ExternalSortMerge extends Operator {
     	 }
          Batch tuples = new Batch(numOfBatch);
          
-         // Batch tuples = new Batch(2); //TESTING
          while (!tuples.isFull() && finalSortedFileReader.peek() != null) {
          	if(finalSortedFileReader.peek() != null) {
          		tuples.add(finalSortedFileReader.next());
@@ -82,14 +88,23 @@ public class ExternalSortMerge extends Operator {
          return tuples;
      }
      
+     /**
+      * return the next tuple to be read and delete after read
+      */
      public Tuple nextTuple() {
     	 return finalSortedFileReader.next();
      }
 	
+     /**
+      * return the next tuple
+      */
      public Tuple peekTuple() {
     	 return finalSortedFileReader.peek();
      } 
 	
+     /**
+      * Close the operator
+      */
      @Override
      public boolean close() {
     	 finalSortedFile.delete();
@@ -97,6 +112,11 @@ public class ExternalSortMerge extends Operator {
     	 return super.close();
      }
 	
+     /**
+      * Generate Sorted Runs for phrase 1
+      * Number of sorted run will depend on how many tuple can fit into a page
+      * And the number of buffer available 
+      */
      private List<File> generateSortedRuns() {
     	 List<File> sortedRunFiles = new ArrayList<>();
     	 Batch currentBatch = source.next();
@@ -116,6 +136,9 @@ public class ExternalSortMerge extends Operator {
     	 return sortedRunFiles;
      }
 	
+     /**
+      * Merge tuples for phrase 1
+      */
      private List<Tuple> sortedRun(ArrayList<Batch> run) {
     	 List<Tuple> tuples = new ArrayList<>();
     	 for (Batch batch: run) {
@@ -127,6 +150,9 @@ public class ExternalSortMerge extends Operator {
     	 return tuples;
      }
 	
+     /**
+      * Save each run for future uses
+      */
      private File writeRun(List<Tuple> run) {
     	 String fileName = "ExternalSort" + number + ",rN" + roundNum + ",fN" + fileNum;
     	 fileNum++;
@@ -140,6 +166,12 @@ public class ExternalSortMerge extends Operator {
     	 return temp;
      }
 	
+     /**
+      *  Merging runs for phrase 2
+      * While the number of sorted run files is bigger than 1
+      * * Allocate the files to be merged
+      * And clear unwanted files
+      */
      private File merge(List<File> sortedRunFiles) {
     	 int numBuff = numBuffers - 1;
 	
@@ -170,6 +202,10 @@ public class ExternalSortMerge extends Operator {
     	 return sortedRunFiles.get(0);
      }
 	
+     /**
+      * Mering for phrase 2
+      * Open each file and perform merging to one bigger file
+      */
      private File mergeSortedRuns(List<File> sortedRuns) {
     	 if (sortedRuns.isEmpty()) {
     		 return null;
@@ -189,6 +225,10 @@ public class ExternalSortMerge extends Operator {
     	 return file;
      }
 	
+     
+     /**
+      * Delete file after use
+      */
      private void clearRuns(List<File> sortedRuns) {
     	 for (File run : sortedRuns) {
     		 run.delete();

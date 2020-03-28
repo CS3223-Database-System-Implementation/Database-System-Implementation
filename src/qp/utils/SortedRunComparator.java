@@ -10,6 +10,9 @@ public class SortedRunComparator implements Comparator<Tuple> {
         this.listOfConditions = listOfConditions;
     }
 
+    /**
+     * A method to compare two tuples
+     */
     @Override
     public int compare(Tuple t1, Tuple t2) {
         for (int i = 0; i < listOfConditions.size(); i++) {

@@ -17,22 +17,16 @@ import java.util.LinkedList;
 import java.util.List;
 
 public class SortMerge extends Join {
-	private ExternalSortMerge leftSort;
+	private ExternalSortMerge leftSort;	
 	private ExternalSortMerge rightSort;
 	
-	//private ExternalSort leftExternalSort;
-	//private ExternalSort rightExternalSort;
-
-	private int leftJoinAttrIdx;
-	private int rightJoinAttrIdx;
-    private int batchNum;
+	private int leftJoinAttrIdx;	//Index of the join attributes in left table
+	private int rightJoinAttrIdx;	//Index of the join attributes in right table
+    private int batchNum; 
     
     private ArrayList<Integer> leftindex;   // Indices of the join attributes in left table
     private ArrayList<Integer> rightindex;  // Indices of the join attributes in right table
-    
-    int[] leftAttrIndex;
-    int[] rightAttrIndex;
-
+       
 
     public SortMerge(Join join) {
     	super(join.getLeft(), join.getRight(), join.getCondition(), join.getOpType());
@@ -41,29 +35,27 @@ public class SortMerge extends Join {
         numBuff = join.getNumBuff();
     }
 
+    /**
+     * During open finds the index of the join attributes
+     * * Materializes the left and right hand side into a file
+     * * Check if the join tuple size is bigger than the tuple size given by user
+     * * Opens the connections
+     * * Sort both left and right file by performing External SortMerge
+     **/
     @Override
     public boolean open() {
         leftindex = new ArrayList<>();
         rightindex = new ArrayList<>();
-        
-        leftAttrIndex = new int[conditionList.size()];
-        rightAttrIndex = new int[conditionList.size()];
-        
-        int i = 0;
+                
         for (Condition con : conditionList) {
             Attribute leftattr = con.getLhs();
             Attribute rightattr = (Attribute) con.getRhs();
             leftindex.add(left.getSchema().indexOf(leftattr));
             rightindex.add(right.getSchema().indexOf(rightattr));
-            
-            leftAttrIndex[i] = left.getSchema().indexOf(leftattr);
-            rightAttrIndex[i] = right.getSchema().indexOf(rightattr);
-            i++;
         }
 
         // Find the batch size
         int tupleSize = getSchema().getTupleSize();
-        int temp = Batch.getPageSize();
         batchNum = Batch.getPageSize() / tupleSize;
         
         if (batchNum < 1) {
@@ -72,9 +64,6 @@ public class SortMerge extends Join {
             return false;
         }
 
-        // Find the index of join attribute of in each relation
-        //int leftSize = getLeft().getSchema().getTupleSize();
-        //int rightSize = getRight().getSchema().getTupleSize();
 
         leftJoinAttrIdx = getLeft().getSchema().indexOf(getCondition().getLhs());
         rightJoinAttrIdx = getRight().getSchema().indexOf((Attribute) getCondition().getRhs());
@@ -83,9 +72,6 @@ public class SortMerge extends Join {
         leftSort = new ExternalSortMerge(left, leftindex, numBuff);
         rightSort = new ExternalSortMerge(right, rightindex, numBuff);
         
-        //leftExternalSort = new ExternalSort(left, null, leftAttrIndex, OpType.EXTERNALSORT, batchNum);
-        //rightExternalSort = new ExternalSort(right, null, rightAttrIndex, OpType.EXTERNALSORT, batchNum);        
-
         if (!(leftSort.open() && rightSort.open())) {
             return false;
         } else {
@@ -93,6 +79,9 @@ public class SortMerge extends Join {
         }
     }
 
+    /**
+     * * And returns a page of output tuples
+     **/
     @Override
     public Batch next() {
     	Batch joinBatch = findMatch();
@@ -103,12 +92,17 @@ public class SortMerge extends Join {
     	}
     }
     
+    /**
+     * Close the operator
+     */
     @Override
     public boolean close() {
-    	//return leftExternalSort.close() && rightExternalSort.close();
-    	return true;
+    	return leftSort.close() && rightSort.close();
     }
     
+    /**
+     * from input buffers selects the tuples satisfying join condition
+     **/
     private Batch findMatch() {
     	Batch joinBatch = new Batch(batchNum);
     	while (!joinBatch.isFull() && leftSort.peekTuple() != null && rightSort.peekTuple() != null) {
