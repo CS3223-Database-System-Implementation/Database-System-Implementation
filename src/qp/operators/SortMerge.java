@@ -100,4 +100,17 @@ public class SortMerge extends Join {
     	}
     	return joinBatch;
     }
+    
+    /**
+     * returns a block of tuples that satisfies the
+     * * condition specified on the tuples coming from base operator
+     **/
+    public Batch nextBlock(int size) {
+    	int temp = batchNum;
+    	batchNum = size;
+    	Batch out = next();
+    	batchNum = temp;
+    	return out;
+    }
+    
 }
