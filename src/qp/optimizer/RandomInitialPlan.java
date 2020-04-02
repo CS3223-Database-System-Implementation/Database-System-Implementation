@@ -20,7 +20,7 @@ public class RandomInitialPlan {
     ArrayList<Attribute> projectlist;
     ArrayList<String> fromlist;
     ArrayList<Condition> selectionlist;   // List of select conditons
-    ArrayList<Condition> joinlist;        // List of join conditions
+    ArrayList<ArrayList<Condition>> joinlist;        // List of join conditions
     ArrayList<Attribute> groupbylist;
     int numJoin;            // Number of joins in this query
     HashMap<String, Operator> tab_op_hash;  // Table name to the Operator
@@ -31,7 +31,7 @@ public class RandomInitialPlan {
         projectlist = sqlquery.getProjectList();
         fromlist = sqlquery.getFromList();
         selectionlist = sqlquery.getSelectionList();
-        joinlist = sqlquery.getJoinList();
+        joinlist = groupConditions(sqlquery.getJoinList());
         groupbylist = sqlquery.getGroupByList();
         numJoin = joinlist.size();
     }
@@ -166,9 +166,9 @@ public class RandomInitialPlan {
             while (bitCList.get(jnnum)) {
                 jnnum = RandNumb.randInt(0, numJoin - 1);
             }
-            Condition cn = (Condition) joinlist.get(jnnum);
-            String lefttab = cn.getLhs().getTabName();
-            String righttab = ((Attribute) cn.getRhs()).getTabName();
+            ArrayList<Condition> cn = joinlist.get(jnnum);
+            String lefttab = cn.get(0).getLhs().getTabName();
+            String righttab = ((Attribute) cn.get(0).getRhs()).getTabName();
             Operator left = (Operator) tab_op_hash.get(lefttab);
             Operator right = (Operator) tab_op_hash.get(righttab);
             jn = new Join(left, right, cn, OpType.JOIN);
@@ -222,5 +222,32 @@ public class RandomInitialPlan {
                 entry.setValue(newop);
             }
         }
+    }
+    
+    private ArrayList<ArrayList<Condition>> groupConditions(ArrayList<Condition> conditions) {
+    	ArrayList<ArrayList<Condition>> result = new ArrayList<ArrayList<Condition>>();
+    	while (!conditions.isEmpty()) {
+    		Condition con = conditions.get(0);
+    		String leftName = con.getLhs().getTabName();
+    		String rightName = ((Attribute)(con.getRhs())).getTabName();
+    		ArrayList<Condition> conGroup = new ArrayList<>();
+    		conGroup.add(con);
+    		for (int i = 1; i < conditions.size(); i++) {
+    			Condition nextCon = conditions.get(i);
+    			String nextLeft = nextCon.getLhs().getTabName();
+    			String nextRight = ((Attribute)(nextCon.getRhs())).getTabName();
+    			if (leftName.equals(nextLeft) && rightName.equals(nextRight)) {
+    				conGroup.add(nextCon);
+    			} else if (rightName.equals(nextLeft) && leftName.equals(nextRight)) {
+    				nextCon.flip();
+    				conGroup.add(nextCon);
+    			}
+    		}
+    		for (Condition c : conGroup) {
+    			conditions.remove(c);
+    		}
+    		result.add(conGroup);
+    	}
+    	return result;
     }
 }
