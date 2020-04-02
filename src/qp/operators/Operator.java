@@ -32,19 +32,19 @@ public class Operator {
     }
 
     public boolean open() {
-        System.err.println("Abstract interface cannot be used.");
+        System.err.println("Abstract interface open() cannot be used.");
         System.exit(1);
         return true;
     }
 
     public Batch next() {
-        System.err.println("Abstract interface cannot be used.");
+        System.err.println("Abstract interface next() cannot be used.");
         System.exit(1);
         return null;
     }
     
     public Batch nextBlock(int size) {
-        System.err.println("Abstract interface cannot be used.");
+        System.err.println("Abstract interface nextBlock() cannot be used.");
         System.exit(1);
         return null;
     }

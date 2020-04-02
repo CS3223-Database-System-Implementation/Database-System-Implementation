@@ -98,7 +98,10 @@ public class Debug {
             }
             PPrint(((Join) node).getLeft());
             System.out.print("  [");
-            PPrint(((Join) node).getCondition());
+            for (Condition c : ((Join) node).getConditionList()) {
+            	PPrint(c);
+            	System.out.print(" ");
+            }            
             System.out.print("]  ");
             PPrint(((Join) node).getRight());
             System.out.print(")");

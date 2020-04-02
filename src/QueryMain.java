@@ -117,7 +117,7 @@ public class QueryMain {
     public static Operator getQueryPlan(SQLQuery sqlquery) {
         Operator root = null;
 
-        /*
+        
         RandomOptimizer optimizer = new RandomOptimizer(sqlquery);
         Operator planroot = optimizer.getOptimizedPlan();
 
@@ -128,9 +128,16 @@ public class QueryMain {
         }
 
         root = RandomOptimizer.makeExecPlan(planroot);
-		*/
+		/*
         GreedyOptimizer optimizer = new GreedyOptimizer(sqlquery);
-        root = optimizer.getGreedyPlan();
+        Operator planroot = optimizer.getGreedyPlan();
+        if (planroot == null) {
+            System.out.println("DPOptimizer: query plan is null");
+            System.exit(1);
+        }
+        
+        root = GreedyOptimizer.makeExecPlan(planroot);
+        */
         return root;
     }
 
