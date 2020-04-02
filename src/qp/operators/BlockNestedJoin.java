@@ -43,6 +43,7 @@ public class BlockNestedJoin extends Join {
      * * Materializes the right hand side into a file
      * * Opens the connections
      **/
+    @Override
     public boolean open() {
         /** select number of tuples per page and block **/
         int tuplesize = schema.getTupleSize();
@@ -109,6 +110,7 @@ public class BlockNestedJoin extends Join {
      * from input buffers selects a block
      * * And returns a page of output tuples
      **/
+    @Override
     public Batch next() {
         int i, j;
         if (eosl) {
@@ -190,12 +192,14 @@ public class BlockNestedJoin extends Join {
     /**
      * Close the operator
      */
+    @Override
     public boolean close() {
         File f = new File(rfname);
         f.delete();
         return true;
     }
     
+    @Override
     public Batch nextBlock(int size) {
     	return next();
     }

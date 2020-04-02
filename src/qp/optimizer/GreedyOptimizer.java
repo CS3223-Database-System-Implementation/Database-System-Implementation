@@ -9,14 +9,17 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.PriorityQueue;
 
+import qp.operators.BlockNestedJoin;
 import qp.operators.Distinct;
 import qp.operators.Join;
 import qp.operators.JoinType;
+import qp.operators.NestedJoin;
 import qp.operators.OpType;
 import qp.operators.Operator;
 import qp.operators.Project;
 import qp.operators.Scan;
 import qp.operators.Select;
+import qp.operators.SortMerge;
 import qp.utils.Attribute;
 import qp.utils.Condition;
 import qp.utils.RandNumb;
@@ -161,8 +164,9 @@ public class GreedyOptimizer {
     	String nextName = startName;
     	PriorityQueue<Operator> queue = new PriorityQueue<>((x, y) -> (int)(pc.getCost(x) - pc.getCost(y)));
     	HashMap<Operator, String> nameMap = new HashMap<>();
-    	HashMap<String, Condition> conditionMap = new HashMap<>();
     	Join jn = null;
+    	ArrayList<String> joinedTableNames = new ArrayList<>();
+    	joinedTableNames.add(startName);
     	while (!tableNames.isEmpty()) {   		
     		for (Condition c : joinlist) {
         		if (c.getLhs().getTabName().equals(nextName)) {
@@ -171,7 +175,6 @@ public class GreedyOptimizer {
         				Operator toAdd = tab_op_hash.get(rhs);
         				queue.add(toAdd);
         				nameMap.put(toAdd, rhs);
-        				conditionMap.put(rhs, c);
         			}       			
         		} else if (((Attribute)(c.getRhs())).getTabName().equals(nextName)) {
         			String lhs = c.getLhs().getTabName();
@@ -180,7 +183,6 @@ public class GreedyOptimizer {
         				queue.add(toAdd);
         				nameMap.put(toAdd, lhs);
         				c.flip();
-        				conditionMap.put(lhs, c); 
         			}        			
         		}        		
     		}
@@ -193,12 +195,22 @@ public class GreedyOptimizer {
         			System.err.println("Error in greedy optimizer.");
                     System.exit(1);
         		}
-    		}
-    		Condition cn = conditionMap.get(nextName);
+    		}    		
     		tableNames.remove(nextName);
-    		jn = new Join(start, next, cn, OpType.JOIN);
+    		ArrayList<Condition> conList = new ArrayList<>();
+    		for (Condition c : joinlist) {
+    			String leftName = c.getLhs().getTabName();
+    			String rightName = ((Attribute)(c.getRhs())).getTabName();
+    			if (leftName.equals(nextName) && joinedTableNames.contains(rightName)) {
+    				conList.add(c);
+    			} else if (rightName.equals(nextName) && joinedTableNames.contains(leftName)) {
+    				conList.add(c);
+    			}
+    		}
+    		jn = new Join(start, next, conList, OpType.JOIN);
             Schema newsche = start.getSchema().joinWith(next.getSchema());
             jn.setSchema(newsche);
+            joinedTableNames.add(nextName);
             
             // Select a join type with smallest cost
             int numJMeth = JoinType.numJoinTypes();
@@ -249,6 +261,62 @@ public class GreedyOptimizer {
             if (entry.getValue().equals(old)) {
                 entry.setValue(newop);
             }
+        }
+    }
+    
+    /**
+     * After finding a choice of method for each operator
+     * * prepare an execution plan by replacing the methods with
+     * * corresponding join operator implementation
+     **/
+    public static Operator makeExecPlan(Operator node) {
+        if (node.getOpType() == OpType.JOIN) {
+            Operator left = makeExecPlan(((Join) node).getLeft());
+            Operator right = makeExecPlan(((Join) node).getRight());
+            int joinType = ((Join) node).getJoinType();
+            int numbuff = BufferManager.getBuffersPerJoin();
+            switch (joinType) {
+                case JoinType.NESTEDJOIN:
+                    NestedJoin nj = new NestedJoin((Join) node);
+                    nj.setLeft(left);
+                    nj.setRight(right);
+                    nj.setNumBuff(numbuff);
+                    return nj;
+                    
+                case JoinType.BLOCKNESTED:
+                    BlockNestedJoin bnj = new BlockNestedJoin((Join) node);
+                    bnj.setLeft(left);
+                    bnj.setRight(right);
+                    bnj.setNumBuff(numbuff);
+                    return bnj;
+                    
+    		    case JoinType.SORTMERGE:
+
+    				SortMerge sm = new SortMerge((Join) node);
+    				sm.setLeft(left);
+    				sm.setRight(right);
+    				sm.setNumBuff(numbuff);
+    				return sm;
+    				
+                default:
+                    return node;
+            }
+        } else if (node.getOpType() == OpType.SELECT) {
+            Operator base = makeExecPlan(((Select) node).getBase());
+            ((Select) node).setBase(base);
+            return node;
+        } else if (node.getOpType() == OpType.PROJECT) {
+            Operator base = makeExecPlan(((Project) node).getBase());
+            ((Project) node).setBase(base);
+            return node;
+        } else if (node.getOpType() == OpType.DISTINCT) {
+            int numbuff = BufferManager.getTotalBuffers();
+            Operator base = makeExecPlan(((Distinct) node).getBase());
+            ((Distinct) node).setBase(base);
+            ((Distinct) node).setNumBuff(numbuff);
+            return node;
+        } else {
+            return node;
         }
     }
     
