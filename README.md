@@ -29,8 +29,7 @@ In addition to the given SPJ (Select-Project-Join) query engine, our team implem
     - git clone https://github.com/CS3223-Database-System-Implementation/Database-System-Implementation.git
 - Open the project in an IDLE of your choice.
 - Make sure you have installed Java not lower than JDK1.8.
-- Add the library to the project in the IDLE settings
-    - (For eclipse) 
+- Add the library to the project in the IDLE settings (below instructions applies to eclipse)
     - In the properties windows, press "Add Folder" to add "src" as a Source Folder from "Java Build Path" -> "Source".
     - In the properties windows, press "Add External Class Folder" to add "lib" from "Java Build Path" -> "Libraries".
     
