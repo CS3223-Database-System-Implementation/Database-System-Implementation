@@ -246,7 +246,9 @@ public class RandomOptimizer {
         Operator right = node.getRight();
         node.setLeft(right);
         node.setRight(left);
-        node.getCondition().flip();
+        for (Condition c : node.getConditionList()) {
+        	c.flip();
+        }
         modifySchema(root);
         return root;
     }
@@ -296,30 +298,32 @@ public class RandomOptimizer {
             /** CASE 1 :  ( A X a1b1 B) X b4c4  C     =  A X a1b1 (B X b4c4 C)
              ** a1b1,  b4c4 are the join conditions at that join operator
              **/
-            temp = new Join(leftright, right, op.getCondition(), OpType.JOIN);
+            temp = new Join(leftright, right, op.getConditionList(), OpType.JOIN);
             temp.setJoinType(op.getJoinType());
             temp.setNodeIndex(op.getNodeIndex());
             op.setLeft(leftleft);
             op.setJoinType(left.getJoinType());
             op.setNodeIndex(left.getNodeIndex());
             op.setRight(temp);
-            op.setCondition(left.getCondition());
+            op.setConditionList(left.getConditionList());
 
         } else {
             System.out.println("--------------------CASE 2---------------");
             /**CASE 2:   ( A X a1b1 B) X a4c4  C     =  B X b1a1 (A X a4c4 C)
              ** a1b1,  a4c4 are the join conditions at that join operator
              **/
-            temp = new Join(leftleft, right, op.getCondition(), OpType.JOIN);
+            temp = new Join(leftleft, right, op.getConditionList(), OpType.JOIN);
             temp.setJoinType(op.getJoinType());
             temp.setNodeIndex(op.getNodeIndex());
             op.setLeft(leftright);
             op.setRight(temp);
             op.setJoinType(left.getJoinType());
             op.setNodeIndex(left.getNodeIndex());
-            Condition newcond = left.getCondition();
-            newcond.flip();
-            op.setCondition(newcond);
+            ArrayList<Condition> newcond = left.getConditionList();
+            for (Condition c : newcond) {
+            	c.flip();
+            }
+            op.setConditionList(newcond);
         }
     }
 
@@ -336,29 +340,31 @@ public class RandomOptimizer {
             /** CASE 3 :  A X a1b1 (B X b4c4  C)     =  (A X a1b1 B ) X b4c4 C
              ** a1b1,  b4c4 are the join conditions at that join operator
              **/
-            temp = new Join(left, rightleft, op.getCondition(), OpType.JOIN);
+            temp = new Join(left, rightleft, op.getConditionList(), OpType.JOIN);
             temp.setJoinType(op.getJoinType());
             temp.setNodeIndex(op.getNodeIndex());
             op.setLeft(temp);
             op.setRight(rightright);
             op.setJoinType(right.getJoinType());
             op.setNodeIndex(right.getNodeIndex());
-            op.setCondition(right.getCondition());
+            op.setConditionList(right.getConditionList());
         } else {
             System.out.println("-----------------------------CASE 4-----------------");
             /** CASE 4 :  A X a1c1 (B X b4c4  C)     =  (A X a1c1 C ) X c4b4 B
              ** a1b1,  b4c4 are the join conditions at that join operator
              **/
-            temp = new Join(left, rightright, op.getCondition(), OpType.JOIN);
+            temp = new Join(left, rightright, op.getConditionList(), OpType.JOIN);
             temp.setJoinType(op.getJoinType());
             temp.setNodeIndex(op.getNodeIndex());
             op.setLeft(temp);
             op.setRight(rightleft);
             op.setJoinType(right.getJoinType());
             op.setNodeIndex(right.getNodeIndex());
-            Condition newcond = right.getCondition();
-            newcond.flip();
-            op.setCondition(newcond);
+            ArrayList<Condition> newcond = right.getConditionList();
+            for (Condition c : newcond) {
+            	c.flip();
+            }
+            op.setConditionList(newcond);
         }
     }
 
