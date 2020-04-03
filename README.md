@@ -1,7 +1,5 @@
 # CS3223 Database Systems Implementation Project
-*AY2019/2020 Semester 2*
-*School of Computing*
-*National University of Singapore*
+*AY2019/2020 Semester 2*, *School of Computing*, *National University of Singapore*
 
 ## Team members
 - [Jiang Chen](https://github.com/jcjxwy)
