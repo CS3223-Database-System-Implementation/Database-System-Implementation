@@ -13,15 +13,15 @@ import qp.utils.Tuple;
 import java.io.*;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Set;
 
 public class SortMerge extends Join {
 	private ExternalSortMerge leftSort;	
 	private ExternalSortMerge rightSort;
 	
-	private int leftJoinAttrIdx;	//Index of the join attributes in left table
-	private int rightJoinAttrIdx;	//Index of the join attributes in right table
     private int batchNum; 
     
     private ArrayList<Integer> leftindex;   // Indices of the join attributes in left table
@@ -29,7 +29,7 @@ public class SortMerge extends Join {
        
 
     public SortMerge(Join join) {
-    	super(join.getLeft(), join.getRight(), join.getCondition(), join.getOpType());
+    	super(join.getLeft(), join.getRight(), join.getConditionList(), join.getOpType());
         schema = join.getSchema();
         jointype = join.getJoinType();
         numBuff = join.getNumBuff();
@@ -63,10 +63,6 @@ public class SortMerge extends Join {
             System.err.println(" PageSize must be bigger than join TupleSize. ");
             return false;
         }
-
-
-        leftJoinAttrIdx = getLeft().getSchema().indexOf(getCondition().getLhs());
-        rightJoinAttrIdx = getRight().getSchema().indexOf((Attribute) getCondition().getRhs());
 
         // Sort the 2 relations
         leftSort = new ExternalSortMerge(left, leftindex, numBuff);
@@ -105,23 +101,54 @@ public class SortMerge extends Join {
      **/
     private Batch findMatch() {
     	Batch joinBatch = new Batch(batchNum);
-    	while (!joinBatch.isFull() && leftSort.peekTuple() != null && rightSort.peekTuple() != null) {
-    		Tuple leftTuple = leftSort.peekTuple();
-    		Tuple rightTuple = rightSort.peekTuple();
-    		int comparison = Tuple.compareTuples(leftTuple, rightTuple, leftJoinAttrIdx, rightJoinAttrIdx);
-            if (comparison < 0) {           
-            	leftSort.nextTuple();
-            } else if (comparison > 0) {
-            	rightSort.nextTuple();
-            } else {  
-                Tuple joinTuple = leftTuple.joinWith(rightTuple);
-                rightSort.nextTuple();
-                joinBatch.add(joinTuple);
-            }
-    	}
-    	return joinBatch;
-    }
+		Tuple leftTuple = leftSort.nextTuple();		//left pointer
+		Tuple rightTuple = rightSort.nextTuple();	//right pointer
+		
+		Set<Tuple> leftSet = new HashSet<>();
+		Set<Tuple> rightSet = new HashSet<>();
+		
+		while (!joinBatch.isFull() && leftTuple != null && rightTuple != null) {		
+			int compare = Tuple.compareTuples(leftTuple, rightTuple, leftindex, rightindex);
+			if (compare == 0) {
+				leftSet.add(leftTuple);
+		   		rightSet.add(rightTuple);
+		   		Tuple secondRightTuple = rightSort.peekTuple();	//second right pointer
+		   		if (secondRightTuple == null) {
+		   			leftTuple = leftSort.nextTuple();
+		   		} else {
+		   			int compareRight = Tuple.compareTuples(rightTuple, secondRightTuple, rightindex, rightindex);
+		            if (compareRight == 0) {
+		        	   rightTuple = rightSort.nextTuple();	//next right tuple will have the same conditions
+		           } else {
+		        	   leftTuple = leftSort.nextTuple();
+		           }
+		       }
+		       
+			} else {
+				join(leftSet, rightSet, joinBatch);
+				leftSet.clear();
+				rightSet.clear();
+				
+				if (compare < 0) {           
+		    	leftTuple = leftSort.nextTuple();	//left is smaller than right, therefore pointer point to next left tuple
+				} else {
+		    	rightTuple = rightSort.nextTuple();	//right is smaller than left, therefore pointer point to next right tuple
+					}
+				}
+			}
+		
+			return joinBatch;
+		}
     
+    private void join(Set<Tuple> leftSet, Set<Tuple> rightSet, Batch joinBatch) {
+    	//perform join for multiple Tuple with same conditions
+    	for (Tuple leftTuple : leftSet) {
+    		for (Tuple rightTuple : rightSet) {
+	        	Tuple joinTuple = leftTuple.joinWith(rightTuple);
+	            joinBatch.add(joinTuple);
+    		}
+    	}
+    }
     /**
      * returns a block of tuples that satisfies the
      * * condition specified on the tuples coming from base operator
